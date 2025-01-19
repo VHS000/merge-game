@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Game - Personagens Futuristas</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: white;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 120px);
+            grid-gap: 10px;
+            width: 520px;
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 255, 255, 0.5);
+        }
+        .tile {
+            width: 120px;
+            height: 120px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.3s;
+            box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        .character {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.1); opacity: 0.9; }
+        }
+        .char-0 { background: linear-gradient(45deg, #0ff, #00f); }
+        .char-1 { background: linear-gradient(45deg, #ff0, #f00); }
+        .char-2 { background: linear-gradient(45deg, #0f0, #0ff); }
+        .char-3 { background: linear-gradient(45deg, #f0f, #ff0); }
+        .char-4 { background: linear-gradient(45deg, #00f, #f0f); }
+    </style>
+</head>
+<body>
+    <h1>Merge Game - Personagens Futuristas</h1>
+    <div id="score">Pontuação: <span id="score-value">0</span></div>
+    <div id="game-board"></div>
+    <script>
+        const board = document.getElementById("game-board");
+        const scoreValue = document.getElementById("score-value");
+        let tiles = [];
+        let score = 0;
+
+        function initBoard() {
+            tiles = new Array(16).fill(null);
+            board.innerHTML = "";
+            for (let i = 0; i < 16; i++) {
+                let tile = document.createElement("div");
+                tile.classList.add("tile");
+                tiles[i] = tile;
+                board.appendChild(tile);
+            }
+            addTile();
+            addTile();
+        }
+
+        function createCharacter(level) {
+            let character = document.createElement("div");
+            character.classList.add("character", `char-${level}`);
+            character.textContent = `Lv ${level + 1}`;
+            return character;
+        }
+
+        function addTile() {
+            let emptyTiles = tiles.filter(tile => !tile.dataset.value);
+            if (emptyTiles.length === 0) return;
+            let randomTile = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+            let character = createCharacter(0);
+            randomTile.dataset.value = "0";
+            randomTile.appendChild(character);
+        }
+
+        function move(direction) {
+            let moved = false;
+            let merged = new Set();
+            let indexes = [];
+
+            if (direction === "left" || direction === "right") {
+                for (let i = 0; i < 4; i++) {
+                    indexes.push([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 3]);
+                }
+            } else {
+                for (let i = 0; i < 4; i++) {
+                    indexes.push([i, i + 4, i + 8, i + 12]);
+                }
+            }
+
+            indexes.forEach(row => {
+                if (direction === "right" || direction === "down") row.reverse();
+                let values = row.map(i => tiles[i].dataset.value || "").filter(v => v !== "");
+                for (let j = 0; j < values.length - 1; j++) {
+                    if (values[j] === values[j + 1] && !merged.has(row[j])) {
+                        values[j] = (parseInt(values[j]) + 1).toString();
+                        values.splice(j + 1, 1);
+                        score += (parseInt(values[j]) + 1) * 10;
+                        merged.add(row[j]);
+                    }
+                }
+                while (values.length < 4) values.push("");
+                if (direction === "right" || direction === "down") values.reverse();
+                row.forEach((i, idx) => {
+                    if (tiles[i].dataset.value !== values[idx]) moved = true;
+                    tiles[i].dataset.value = values[idx];
+                    tiles[i].innerHTML = values[idx] !== "" ? createCharacter(parseInt(values[idx])).outerHTML : "";
+                });
+            });
+            if (moved) {
+                addTile();
+                scoreValue.textContent = score;
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft") move("left");
+            else if (e.key === "ArrowRight") move("right");
+            else if (e.key === "ArrowUp") move("up");
+            else if (e.key === "ArrowDown") move("down");
+        });
+
+        initBoard();
+    </script>
+</body>
+</html>
